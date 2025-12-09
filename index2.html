@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Love Animation Final</title>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: black;
+        width: 100%;
+        height: 100%;
+        font-family: sans-serif;
+    }
+
+    #matrix {
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+
+    canvas#particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+
+    #label {
+        position: fixed;
+        top: 70%;
+        width: 100%;
+        text-align: center;
+        font-size: 48px;
+        font-weight: bold;
+        color: #ffb3df;
+        text-shadow: 0 0 25px #ff5fbb;
+        opacity: 0;
+        transition: 0.8s;
+    }
+
+    /* PHOTO FRAMES SIDE BY SIDE */
+    .photo-frame {
+        position: fixed;
+        top: 50%;
+        width: 320px;
+        height: 320px;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 0 35px #ff66cc;
+        opacity: 0;
+        transition: 1.2s ease-in-out;
+    }
+
+    #photo1 { left: calc(50% - 360px); transform: translateY(-50%); }
+    #photo2 { left: calc(50% + 40px); transform: translateY(-50%); }
+
+    .photo-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* HEART PLAY BUTTON */
+    #playHeart {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 85px;
+        color: #ff66cc;
+        text-shadow: 0 0 25px #ff3399, 0 0 35px #ff66cc;
+        cursor: pointer;
+        z-index: 9999;
+        user-select: none;
+        transition: 0.4s ease;
+    }
+    #playHeart:hover {
+        transform: translate(-50%, -50%) scale(1.15);
+    }
+</style>
+</head>
+<body>
+
+<!-- ❤️ HEART BUTTON TO ENABLE MUSIC -->
+<div id="playHeart">❤️</div>
+
+<!-- AUDIO -->
+<audio id="bgm" preload="auto" loop>
+    <source src="https://files.catbox.moe/9m8kh6.mp3" type="audio/mpeg">
+</audio>
+
+<!-- CANVASES -->
+<canvas id="matrix"></canvas>
+<canvas id="particles"></canvas>
+
+<!-- TEXT LABEL -->
+<div id="label"></div>
+
+<!-- PHOTO 1 -->
+<div id="photo1" class="photo-frame">
+    <img src="https://imgvb.com/images/2025/12/09/c9df7c3cefd1fee458568f33d087ae82.jpg">
+</div>
+
+<!-- PHOTO 2 -->
+<div id="photo2" class="photo-frame">
+    <img src="https://imgvb.com/images/2025/12/09/5c90ff5f416f8cb01d733c72734ce01d.png">
+</div>
+
+<script>
+// ========================================================
+// ❤️ MUSIC PLAY WITH HEART BUTTON
+// ========================================================
+const music = document.getElementById("bgm");
+const heartBtn = document.getElementById("playHeart");
+
+heartBtn.addEventListener("click", () => {
+    music.play()
+        .then(() => {
+            heartBtn.style.opacity = "0";
+            setTimeout(() => heartBtn.style.display = "none", 400);
+        })
+        .catch(err => console.log(err));
+});
+
+// ========================================================
+// MATRIX RAIN BACKGROUND
+// ========================================================
+const matrixCanvas = document.getElementById("matrix");
+const mtx = matrixCanvas.getContext("2d");
+
+matrixCanvas.width = window.innerWidth;
+matrixCanvas.height = window.innerHeight;
+
+const chars = "LOVE321YOUAREMYSAYANG❤".split("");
+const fontSize = 18;
+const columns = matrixCanvas.width / fontSize;
+let drops = [];
+
+for (let i = 0; i < columns; i++) drops[i] = 1;
+
+function drawMatrix() {
+    mtx.fillStyle = "rgba(0,0,0,0.05)";
+    mtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+
+    mtx.fillStyle = "#ff66cc";
+    mtx.font = fontSize + "px monospace";
+
+    for (let i = 0; i < drops.length; i++) {
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        mtx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975)
+            drops[i] = 0;
+
+        drops[i]++;
+    }
+}
+setInterval(drawMatrix, 40);
+
+// ========================================================
+// PARTICLE MORPHING ENGINE
+// ========================================================
+const canvas = document.getElementById("particles");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+const particleCount = 1400;
+const size = 2;
+const speed = 0.07;
+
+for (let i = 0; i < particleCount; i++) {
+    particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        tx: 0,
+        ty: 0
+    });
+}
+
+function generateShape(text, isHeart = false) {
+    const tempCanvas = document.createElement("canvas");
+    const tctx = tempCanvas.getContext("2d");
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+
+    if (!isHeart) {
+        tctx.fillStyle = "white";
+        tctx.font = "200px Arial Black";
+        tctx.textAlign = "center";
+        tctx.textBaseline = "middle";
+        tctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    } else {
+        // ❤️ CLASSIC HEART SHAPE
+        tctx.fillStyle = "white";
+        let cx = canvas.width / 2;
+        let cy = canvas.height / 2;
+        let s = 11;
+
+        for (let i = 0; i < Math.PI * 2; i += 0.01) {
+            let px = 16 * Math.pow(Math.sin(i), 3);
+            let py = -(13 * Math.cos(i) - 5 * Math.cos(2*i) - 2 * Math.cos(3*i) - Math.cos(4*i));
+            tctx.fillRect(cx + px * s, cy + py * s, 4, 4);
+        }
+    }
+
+    const imgData = tctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const points = [];
+
+    for (let i = 0; i < canvas.width; i += 12) {
+        for (let j = 0; j < canvas.height; j += 12) {
+            const index = (j * canvas.width + i) * 4;
+            if (imgData[index + 3] > 128) points.push({ x: i, y: j });
+        }
+    }
+    return points;
+}
+
+function morph(points) {
+    for (let i = 0; i < particles.length; i++) {
+        let p = particles[i];
+        let target = points[i % points.length];
+        p.tx = target.x;
+        p.ty = target.y;
+    }
+}
+
+function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let p of particles) {
+        p.x += (p.tx - p.x) * speed;
+        p.y += (p.ty - p.y) * speed;
+        ctx.fillStyle = "#ff99cc";
+        ctx.fillRect(p.x, p.y, size, size);
+    }
+    requestAnimationFrame(render);
+}
+render();
+
+// ========================================================
+// FINAL SEQUENCE CONTROLLER
+// ========================================================
+const label = document.getElementById("label");
+const photo1 = document.getElementById("photo1");
+const photo2 = document.getElementById("photo2");
+
+const sequence = [
+    { t: "3", heart: false, photos: false },
+    { t: "2", heart: false, photos: false },
+    { t: "1", heart: false, photos: false },
+    { t: "You", heart: false, photos: false },
+    { t: "Are", heart: false, photos: false },
+    { t: "My", heart: false, photos: false },
+    { t: "I LOVE YOU SAYANG", heart: true, photos: false },
+    { t: "", heart: false, photos: true }
+];
+
+let idx = 0;
+
+function showNext() {
+    label.style.opacity = 0;
+    photo1.style.opacity = 0;
+    photo2.style.opacity = 0;
+
+    const item = sequence[idx];
+
+    setTimeout(() => {
+        if (!item.photos) {
+            label.innerHTML = item.t;
+            label.style.opacity = 1;
+            morph(generateShape(item.t, item.heart));
+
+        } else {
+            photo1.style.opacity = 1;
+            photo2.style.opacity = 1;
+        }
+    }, 500);
+
+    idx++;
+    if (idx >= sequence.length) idx = 0;
+}
+
+setInterval(showNext, 3000);
+showNext();
+</script>
+
+</body>
+</html>
