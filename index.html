@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Love Animation Final</title>
+<title>Love Animation</title>
 <style>
     html, body {
         margin: 0;
@@ -39,7 +39,7 @@
         transition: 0.8s;
     }
 
-    /* PHOTO FRAMES SIDE BY SIDE */
+    /* === PHOTO FRAMES LEFT + RIGHT === */
     .photo-frame {
         position: fixed;
         top: 50%;
@@ -49,79 +49,51 @@
         overflow: hidden;
         box-shadow: 0 0 35px #ff66cc;
         opacity: 0;
-        transition: 1.2s ease-in-out;
+        transition: 1s ease-in-out;
     }
 
     #photo1 { left: calc(50% - 360px); transform: translateY(-50%); }
-    #photo2 { left: calc(50% + 40px); transform: translateY(-50%); }
+    #photo2 { left: calc(50% + 40px);  transform: translateY(-50%); }
 
     .photo-frame img {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
-
-    /* HEART PLAY BUTTON */
-    #playHeart {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 85px;
-        color: #ff66cc;
-        text-shadow: 0 0 25px #ff3399, 0 0 35px #ff66cc;
-        cursor: pointer;
-        z-index: 9999;
-        user-select: none;
-        transition: 0.4s ease;
-    }
-    #playHeart:hover {
-        transform: translate(-50%, -50%) scale(1.15);
-    }
 </style>
 </head>
 <body>
 
-<!-- ❤️ HEART BUTTON TO ENABLE MUSIC -->
-<div id="playHeart">❤️</div>
-
-<!-- AUDIO -->
-<audio id="bgm" preload="auto" loop>
+<!-- FIX AUTOPLAY -->
+<audio id="bgm" autoplay loop muted playsinline>
     <source src="https://files.catbox.moe/9m8kh6.mp3" type="audio/mpeg">
 </audio>
 
-<!-- CANVASES -->
 <canvas id="matrix"></canvas>
 <canvas id="particles"></canvas>
-
-<!-- TEXT LABEL -->
 <div id="label"></div>
 
-<!-- PHOTO 1 -->
+<!-- PHOTO LEFT -->
 <div id="photo1" class="photo-frame">
     <img src="https://imgvb.com/images/2025/12/09/c9df7c3cefd1fee458568f33d087ae82.jpg">
 </div>
 
-<!-- PHOTO 2 -->
+<!-- PHOTO RIGHT -->
 <div id="photo2" class="photo-frame">
     <img src="https://imgvb.com/images/2025/12/09/5c90ff5f416f8cb01d733c72734ce01d.png">
 </div>
 
 <script>
 // ========================================================
-// ❤️ MUSIC PLAY WITH HEART BUTTON
+// ENABLE AUDIO AUTOPLAY FIX
 // ========================================================
-const music = document.getElementById("bgm");
-const heartBtn = document.getElementById("playHeart");
+const audio = document.getElementById("bgm");
 
-heartBtn.addEventListener("click", () => {
-    music.play()
-        .then(() => {
-            heartBtn.style.opacity = "0";
-            setTimeout(() => heartBtn.style.display = "none", 400);
-        })
-        .catch(err => console.log(err));
-});
+setTimeout(() => {
+    audio.muted = false;
+    audio.volume = 1.0;
+    audio.play().catch(() => {});
+}, 500);
 
 // ========================================================
 // MATRIX RAIN BACKGROUND
@@ -193,18 +165,14 @@ function generateShape(text, isHeart = false) {
         tctx.textAlign = "center";
         tctx.textBaseline = "middle";
         tctx.fillText(text, canvas.width / 2, canvas.height / 2);
-
     } else {
-        // ❤️ CLASSIC HEART SHAPE
         tctx.fillStyle = "white";
-        let cx = canvas.width / 2;
-        let cy = canvas.height / 2;
-        let s = 11;
-
+        let x = canvas.width/2, y = canvas.height/2;
+        let scale = 11;
         for (let i = 0; i < Math.PI * 2; i += 0.01) {
             let px = 16 * Math.pow(Math.sin(i), 3);
             let py = -(13 * Math.cos(i) - 5 * Math.cos(2*i) - 2 * Math.cos(3*i) - Math.cos(4*i));
-            tctx.fillRect(cx + px * s, cy + py * s, 4, 4);
+            tctx.fillRect(x + px * scale, y + py * scale, 4, 4);
         }
     }
 
@@ -217,13 +185,15 @@ function generateShape(text, isHeart = false) {
             if (imgData[index + 3] > 128) points.push({ x: i, y: j });
         }
     }
+
     return points;
 }
 
 function morph(points) {
     for (let i = 0; i < particles.length; i++) {
-        let p = particles[i];
-        let target = points[i % points.length];
+        const p = particles[i];
+        const target = points[i % points.length];
+
         p.tx = target.x;
         p.ty = target.y;
     }
@@ -231,48 +201,56 @@ function morph(points) {
 
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     for (let p of particles) {
         p.x += (p.tx - p.x) * speed;
         p.y += (p.ty - p.y) * speed;
+
         ctx.fillStyle = "#ff99cc";
         ctx.fillRect(p.x, p.y, size, size);
     }
+
     requestAnimationFrame(render);
 }
 render();
 
 // ========================================================
-// FINAL SEQUENCE CONTROLLER
+// SEQUENCE (PHOTOS NOW APPEAR TOGETHER + SIDE-BY-SIDE)
 // ========================================================
 const label = document.getElementById("label");
 const photo1 = document.getElementById("photo1");
 const photo2 = document.getElementById("photo2");
 
+photo1.style.opacity = 0;
+photo2.style.opacity = 0;
+
 const sequence = [
-    { t: "3", heart: false, photos: false },
-    { t: "2", heart: false, photos: false },
-    { t: "1", heart: false, photos: false },
-    { t: "You", heart: false, photos: false },
-    { t: "Are", heart: false, photos: false },
-    { t: "My", heart: false, photos: false },
-    { t: "I LOVE YOU SAYANG", heart: true, photos: false },
-    { t: "", heart: false, photos: true }
+    { t: "3", heart: false, showPhotos: false },
+    { t: "2", heart: false, showPhotos: false },
+    { t: "1", heart: false, showPhotos: false },
+    { t: "You", heart: false, showPhotos: false },
+    { t: "Are", heart: false, showPhotos: false },
+    { t: "My", heart: false, showPhotos: false },
+    { t: "I LOVE YOU SAYANG", heart: true, showPhotos: false },
+    { t: "", heart: false, showPhotos: true }
 ];
 
 let idx = 0;
 
 function showNext() {
+    const item = sequence[idx];
+
     label.style.opacity = 0;
     photo1.style.opacity = 0;
     photo2.style.opacity = 0;
 
-    const item = sequence[idx];
-
     setTimeout(() => {
-        if (!item.photos) {
+        if (!item.showPhotos) {
             label.innerHTML = item.t;
             label.style.opacity = 1;
-            morph(generateShape(item.t, item.heart));
+
+            let shape = generateShape(item.t, item.heart);
+            morph(shape);
 
         } else {
             photo1.style.opacity = 1;
